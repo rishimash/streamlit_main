@@ -7,7 +7,7 @@ __pycache__
 .venv
 
 # secrets
-**/.streamlit/secrets.toml
+.streamlit/secrets.toml
 
 # dbdocs
 **/dbdocs.egg-info

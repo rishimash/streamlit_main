@@ -7,17 +7,16 @@ from fuzzywuzzy import fuzz
 from nltk.corpus import stopwords
 import re
 import nltk
-import datetime
-
 
 
 class DashBoard:
 
 
-    def __init__(self, username='Nate',session_time=datetime.datetime.now(), model_name = 'V0'):
+    def __init__(self, username='Nate', model_name = 'V0', write=True):
         nltk.download('stopwords')
+        self.session_time = pd.Timestamp(np.datetime64('now'))
+        self.write = write
         self.username = username
-        self.session_time = session_time
         self.model_name = model_name
         self.f = FileReader(SAVE_PATH='main/Archivetables/')
         self.final_model_output = pd.read_csv('main/Attribution/data.csv', index_col=0)
@@ -137,13 +136,24 @@ class DashBoard:
         self.prods['NOMINAL'] = self.prods.apply(lambda x : product_pricing(x, 'NOMINAL', max_thresh, min_thresh), axis=1)
 
         
-    def recommend_product(self, influ_chk):
+    def recommend_product(self, influ_chk, drop_no=None):
         
-
-        try:
-            startf =self.s.run(f"""select SHOP_PRODUCT_ID, DROP_NUMBER from DS_DEV_DATABASE.INFLUENCER.HUMAN_EVALUATION where INFLUENCER_HANDLE = '{influ_chk}' and USERNAME = '{self.username}'""")
-        except:
-            startf = pd.DataFrame()
+        if drop_no is not None:
+            if drop_no == 1:
+                try:
+                    startf = self.s.run(f"""select SHOP_PRODUCT_ID, DROP_NUMBER from DS_DEV_DATABASE.INFLUENCER.HUMAN_EVALUATION where INFLUENCER_HANDLE = '{influ_chk}' and USERNAME = '{self.username}' and DROP_NUMBER = {drop_no}""")
+                except:
+                    startf = pd.DataFrame()
+            else:
+                try:
+                    startf = self.s.run(f"""select SHOP_PRODUCT_ID, DROP_NUMBER from DS_DEV_DATABASE.INFLUENCER.HUMAN_EVALUATION where INFLUENCER_HANDLE = '{influ_chk}' and USERNAME = '{self.username}' and DROP_NUMBER = {drop_no-1}""")
+                except:
+                    startf = pd.DataFrame()
+        else:
+            try:
+                startf = self.s.run(f"""select SHOP_PRODUCT_ID, DROP_NUMBER from DS_DEV_DATABASE.INFLUENCER.HUMAN_EVALUATION where INFLUENCER_HANDLE = '{influ_chk}' and USERNAME = '{self.username}'""")
+            except:
+                startf = pd.DataFrame()
 
         interest_rank = pd.DataFrame(self.audience_interests.loc[influ_chk]).T.dot(self.all_brand_interests.T)
         gender_age_rank = pd.DataFrame(self.audience_genders.loc[influ_chk]).T.dot(self.all_brand_gender_age.T)
@@ -180,8 +190,8 @@ class DashBoard:
         prods_to_show['DROP_NUMBER'] = drop_number
         prods_to_show['MODEL_NAME'] = self.model_name
         
-
-        fin = self.snowappender(prods_to_show[['OS_STORE_ID','SHOP_PRODUCT_ID','PRODUCT_TITLE','PRICE','OS_PRODUCT_COGS','PRODUCT_GROSS_MARGIN','INFLUENCER_PRODUCT_DISCOUNT','IMAGEURL','USERNAME','CREATED_AT','INFLUENCER_HANDLE','DROP_NUMBER','MODEL_NAME']])
+        if self.write:
+            fin = self.snowappender(prods_to_show[['OS_STORE_ID','SHOP_PRODUCT_ID','PRODUCT_TITLE','PRICE','OS_PRODUCT_COGS','PRODUCT_GROSS_MARGIN','INFLUENCER_PRODUCT_DISCOUNT','IMAGEURL','USERNAME','CREATED_AT','INFLUENCER_HANDLE','DROP_NUMBER','MODEL_NAME']])
     
         return prods_to_show
 
