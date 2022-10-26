@@ -62,16 +62,17 @@ def cacherecos(influ_chk, drop_no):
 
 h1, h2= st.columns([30,1])
 
-h1.title('Influencer Simulations :tada:')
+h1.title('Influencer Simulations 📱')
 h2.image(image, caption='@rishimash',width=50)
 
 if check_password():
 
     col1, col2 = st.columns([1,2])
 
-    username = col1.text_input(label='USER',value='NATE',max_chars=30, key='user')
+    username = col1.text_input(label='USER',value='Nate',max_chars=30, key='user')
 
-    ob, influ_select_from_list = cacher(username)
+    with st.spinner('Give me like 1 min to load all the 💩 ...'):
+        ob, influ_select_from_list = cacher(username)
 
     influ_chk = col2.selectbox(label='INFLUENCER', options = influ_select_from_list)
 
@@ -86,7 +87,8 @@ if check_password():
 
     max_recs = c2.number_input('# Recommendations', 10)
 
-    [data, recos] = cacherecos(influ_chk, drop_no)
+    with st.spinner('Wait for it...'):
+        [data, recos] = cacherecos(influ_chk, drop_no)
 
     session_vals = {}
 
