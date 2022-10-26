@@ -42,13 +42,20 @@ def check_password():
 @st.experimental_singleton()
 def cacher(username):
     ob = DashBoard(username=username, write=False)
+    ob.influ_info['engagement_rate'] = ob.influ_info['engagement_rate'].apply(lambda x : '{:.2%}'.format(float(x)))
+
+    ob.influ_followers_engagement = ob.influ_followers_engagement.set_index('INFLUENCER_HANDLE')
+    # ob.influ_followers_engagement['% US Followers'] = ob.influ_info['% US Followers'].apply(lambda x : '{:.2%}'.format(float(x)))
+    # ob.influ_followers_engagement['engagement_rate_pctile'] = ob.influ_info['engagement_rate_pctile'].apply(lambda x : '{:.2%}'.format(float(x)))
+    # ob.influ_followers_engagement['follower_pctile'] = ob.influ_info['follower_pctile'].apply(lambda x : '{:.2%}'.format(float(x)))
+
     influ_select_from_list = ob.influ_info['INFLUENCER_HANDLE'].unique()
 
     return ob, influ_select_from_list
 
 @st.experimental_singleton()
-def cacherecos(influ_chk, drop_no):
-    recos = ob.recommend_product(influ_chk, drop_no=drop_no).iloc[:max_recs,:]
+def cacherecos(_ob, influ_chk, drop_no):
+    recos = _ob.recommend_product(influ_chk, drop_no=drop_no).iloc[:max_recs,:]
 
     data = []
     for val in range(0,len(recos),1):
@@ -76,11 +83,9 @@ if check_password():
 
     influ_chk = col2.selectbox(label='INFLUENCER', options = influ_select_from_list)
 
-    influ_data = ob.influ_info.loc[influ_chk]
-
-    st.image(Image.open(urlopen(influ_data['picture'])))
-
-    st.table(pd.concat([pd.DataFrame(ob.influ_info.loc[influ_chk, ['type','fullname','description','gender','age_group','followers','posts_count','engagement_rate','avg_likes','avg_comments','avg_views']]), pd.DataFrame(ob.influ_followers_engagement.set_index('INFLUENCER_HANDLE').loc[influ_chk,['% US Followers','engagement_rate_pctile','follower_pctile','Discount Policy']])]))
+    st.image(Image.open(urlopen(ob.influ_info.loc[influ_chk]['picture'])))
+  
+    st.table(pd.concat([ pd.DataFrame(ob.influ_info.loc[influ_chk, ['type','fullname','description','gender','age_group','followers','posts_count','engagement_rate','avg_likes','avg_comments','avg_views']]), pd.DataFrame(ob.influ_followers_engagement.loc[influ_chk,['% US Followers','engagement_rate_pctile','follower_pctile','Discount Policy']])]))
 
     c1, c2 = st.columns([1,1])
     drop_no = c1.number_input('Drop #',1)
@@ -88,13 +93,12 @@ if check_password():
     max_recs = c2.number_input('# Recommendations', 10)
 
     with st.spinner('Wait for it 🕒 ...'):
-        [data, recos] = cacherecos(influ_chk, drop_no)
+        [data, recos] = cacherecos(ob, influ_chk, drop_no)
 
     session_vals = {}
 
     idx = 0 
     while idx <= len(data)-1:
-        # for _ in range(len(filteredImages)):
         cols = st.columns(2) 
         try:
             cols[0].image(data[idx][0], width=150, caption=data[idx][1])

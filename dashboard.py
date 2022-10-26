@@ -146,7 +146,7 @@ class DashBoard:
                     startf = pd.DataFrame()
             else:
                 try:
-                    startf = self.s.run(f"""select SHOP_PRODUCT_ID, DROP_NUMBER from DS_DEV_DATABASE.INFLUENCER.HUMAN_EVALUATION where INFLUENCER_HANDLE = '{influ_chk}' and USERNAME = '{self.username}' and DROP_NUMBER = {drop_no-1}""")
+                    startf = self.s.run(f"""select SHOP_PRODUCT_ID, DROP_NUMBER from DS_DEV_DATABASE.INFLUENCER.HUMAN_EVALUATION where INFLUENCER_HANDLE = '{influ_chk}' and USERNAME = '{self.username}' and DROP_NUMBER < {drop_no}""")
                 except:
                     startf = pd.DataFrame()
         else:
@@ -179,7 +179,7 @@ class DashBoard:
         prods_to_show = influencer_discount_prods.drop_duplicates(['OS_MERCHANT'], keep='first').set_index('OS_MERCHANT').loc[available_set.index]
         prods_to_show = prods_to_show[prods_to_show['GENDER_CLEANED'].isin([self.influ_info.loc[influ_chk, 'GENDER_CODE'], 'U' ])]
 
-        use_col = self.influ_followers_engagement.set_index('INFLUENCER_HANDLE').loc[influ_chk]['Discount Policy']
+        use_col = self.influ_followers_engagement.loc[influ_chk]['Discount Policy']
         prods_to_show['INFLUENCER_PRODUCT_DISCOUNT'] = prods_to_show[use_col]
 
         prods_to_show = prods_to_show.dropna(subset=['PRODUCT_TITLE',"PRICE",'OS_PRODUCT_COGS','PRODUCT_GROSS_MARGIN','INFLUENCER_PRODUCT_DISCOUNT','IMAGEURL'])
