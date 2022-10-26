@@ -7,4 +7,3 @@ pyarrow==8.0.0
 scipy
 snowflake-connector-python==2.7.12
 streamlit==1.12.0
-st_clickable_images
