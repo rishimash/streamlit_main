@@ -39,14 +39,14 @@ def check_password():
         # Password correct.
         return True
 
-@st.experimental_singleton(show_spinner=True)
+@st.experimental_singleton()
 def cacher(username):
     ob = DashBoard(username=username, write=False)
     influ_select_from_list = ob.influ_info['INFLUENCER_HANDLE'].unique()
 
     return ob, influ_select_from_list
 
-@st.experimental_singleton(show_spinner=True)
+@st.experimental_singleton()
 def cacherecos(influ_chk, drop_no):
     recos = ob.recommend_product(influ_chk, drop_no=drop_no).iloc[:max_recs,:]
 
@@ -87,7 +87,7 @@ if check_password():
 
     max_recs = c2.number_input('# Recommendations', 10)
 
-    with st.spinner('Wait for it...'):
+    with st.spinner('Wait for it 🕒 ...'):
         [data, recos] = cacherecos(influ_chk, drop_no)
 
     session_vals = {}
