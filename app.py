@@ -25,7 +25,7 @@ def check_password():
     if "password_correct" not in st.session_state:
         # First run, show input for password.
         st.text_input(
-            "Whats the word?", type="password", on_change=password_entered, key="password"
+            "Whats the 🪄 word?", type="password", on_change=password_entered, key="password"
         )
         return False
     elif not st.session_state["password_correct"]:
