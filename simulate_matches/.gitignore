@@ -1,0 +1,18 @@
+# project
+**/.idea
+**/.DS_STORE
+
+# python
+__pycache__
+.venv
+
+# secrets
+**/.streamlit/secrets.toml
+
+# dbdocs
+**/dbdocs.egg-info
+**/build
+**/dist
+
+# generated
+failed.sql

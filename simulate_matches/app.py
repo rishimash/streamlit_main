@@ -5,7 +5,7 @@ from urllib.request import urlopen
 from PIL import Image
 from dashboard import DashBoard
 st.set_page_config(layout="wide")
-image = Image.open('./assets/os_logo.jpg')
+#image = Image.open('./assets/os_logo.jpg')
 
 
 h1, h2= st.columns([30,1])
