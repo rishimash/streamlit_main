@@ -6,5 +6,4 @@ plotly==5.10.0
 pyarrow==8.0.0
 scipy
 snowflake-connector-python==2.7.12
-streamlit==1.12.2
-re
+streamlit==1.12.0
