@@ -11,7 +11,7 @@ st.set_page_config(layout="wide")
 h1, h2= st.columns([30,1])
 
 h1.title('Influencer Simulations :tada:')
-h2.image(image, caption='@rishimash',width=50)
+#h2.image(image, caption='@rishimash',width=50)
 
 @st.experimental_singleton(show_spinner=True)
 def cacher(username):
