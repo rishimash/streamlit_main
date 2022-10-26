@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import streamlit as st
 from urllib.request import urlopen
 from PIL import Image

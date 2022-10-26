@@ -22,9 +22,9 @@ class DashBoard:
         self.f = FileReader(SAVE_PATH='main/Archivetables/')
         self.final_model_output = pd.read_csv('main/Attribution/data.csv', index_col=0)
         self.s = SnowLoader()
-        self.cust_orders_df = Query.cross_orders(s)
+        self.cust_orders_df = Query.cross_orders(self.s)
         
-        self.prods = s.run(Query.products_q)
+        self.prods = self.s.run(Query.products_q)
 
         self.audience_interests = create_embedding_matrix(self.f,'audience_interests_inf__audience_followers')
         self.audience_genders = create_embedding_matrix(self.f,'audience_genders_per_age_inf__audience_followers')
