@@ -8,16 +8,16 @@ image = Image.open('assets/os_logo.jpg')
 
 
 
-from snowflake.connector.pandas_tools import write_pandas
-import pandas as pd
-from filereader import FileReader
-from stats import *
-from query import *
-from fuzzywuzzy import fuzz
-from nltk.corpus import stopwords
-import re
-import nltk
-import datetime
+# from snowflake.connector.pandas_tools import write_pandas
+# import pandas as pd
+# from filereader import FileReader
+# from stats import *
+# from query import *
+# from fuzzywuzzy import fuzz
+# from nltk.corpus import stopwords
+# import re
+# import nltk
+# import datetime
 
 
 
