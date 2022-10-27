@@ -185,6 +185,7 @@ class Query:
                     '''
 
     products_q = """
+                
                 with
                 inventory_level as (
                 select
@@ -216,7 +217,10 @@ class Query:
                     and (not l._fivetran_deleted or l._fivetran_deleted is null)
                     and l.active = true),
 
-                invs as (select conn.os_store_id, p.source_schema, pv.sku,  pv.id as pvid, avg(pv.price) as price, p.handle as product_handle, p.title product_title, pv.title variant_title,  sum(il.available) as inventory_available, inventory_policy, tracked, pv.product_id
+                invs as (
+                    select 
+                    conn.os_store_id,
+                    p.source_schema, pv.sku,  pv.id as pvid, avg(pv.price) as price, p.handle as product_handle, p.title product_title, pv.title variant_title,  sum(il.available) as inventory_available, inventory_policy, tracked, pv.product_id
                 from os_merchants_prod_database.shopify.product_variant          pv
                     inner join os_merchants_prod_database.shopify.product        p
                     on p.id = pv.product_id
@@ -230,12 +234,13 @@ class Query:
                     on ii.id = pv.inventory_item_id
                     left join  dbt_analytics.prod.def__os_merchant_fivetran_connectors__metrics conn
                     on lower(p.source_schema) = lower(conn.os_source_schema)
-                
+
                 group by conn.os_store_id, p.source_schema, pv.sku,  pv.id, pv.product_id, p.handle, p.title, pv.title, inventory_policy, tracked),
                 images as (
                 select
                 ass.*,
-                prod.shopify_external_id as shop_product_id
+                prod.shopify_external_id as shop_product_id,
+                prod.description as product_description
                 from catalog_service_prod.aurora_postgres_public.asset ass
                 inner join catalog_service_prod.aurora_postgres_public.product_asset jt
                 on ass.id = jt.asset_id
@@ -243,13 +248,14 @@ class Query:
                 on jt.product_id = prod.id
                 ),
                 available_inventory as (
-                select invs.*,  img.url as imageurl
+                select invs.*, img.url as imageurl, img.product_description
                 from invs
                 inner join images img
                 on invs.product_id = img.shop_product_id
                 where ((inventory_available > 0 and tracked=True and inventory_policy = 'deny') or (tracked = False
                 or inventory_policy = 'continue')) and (imageurl is not null and img.position = 0)
-                ), sales as (-- get best selling product ids within last 6 months
+                )
+                ,sales as (-- get best selling product ids within last 6 months
                 select
                 os_merchant,
                 line.OS_STORE_ID,
@@ -313,6 +319,7 @@ class Query:
                 select
                 ranked.*,
                 price,
+                product_description as description,
                 product_handle, 
                 product_title, 
                 inventory_available, 
@@ -327,12 +334,12 @@ class Query:
                 and ranked.SHOP_PRODUCT_ID = full_cogs.shop_product_id
                 left join available_inventory inv
                 on ranked.os_store_id = inv.os_store_id and ranked.shop_product_id = inv.product_id
-                    
+
                 qualify
                     row_number() over (
                     partition by             
                         full_cogs.os_store_id, inv.product_title
-                            
+
                     order by 
                         product_published_at desc
                     ) = 1
@@ -387,11 +394,8 @@ class Query:
                 )
                 select
                 semi.*,
-                prods.BODY_HTML as description,
                 case when gender_affinity is not null then gender_affinity else gender_preference end as gender_cleaned
                 from semi
-                left join DBT_ANALYTICS.PROD.DEF__OS_SHOPIFY_PRODUCTS prods
-                on semi.OS_STORE_ID = prods.OS_STORE_ID and semi.SHOP_PRODUCT_ID = prods.SHOP_PRODUCT_ID
                 """
 
 
