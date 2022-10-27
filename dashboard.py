@@ -97,8 +97,8 @@ class DashBoard:
         for merch in cleaned_eng_rate_hists['INFLUENCER_HANDLE'].unique():
             try:
                 [f_, f_inv ] = fit_cdf(cleaned_eng_rate_hists[cleaned_eng_rate_hists['INFLUENCER_HANDLE']==merch])
-                self.eng_rate_hist_percentile_dict.loc[:,merch] = f_
-                self.eng_rate_hist_eng_func_dict.loc[:,merch] = f_inv
+                self.eng_rate_hist_percentile_dict[merch] = f_
+                self.eng_rate_hist_eng_func_dict[merch] = f_inv
             except:
                 pass
 
