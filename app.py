@@ -54,15 +54,19 @@ def cacher(username):
     return ob, influ_select_from_list
 
 @st.experimental_singleton()
-def cacherecos(_ob, influ_chk, drop_no):
+def cacherecos(_ob, influ_chk, drop_no, max_recs):
     recos = _ob.recommend_product(influ_chk, drop_no=drop_no).iloc[:max_recs,:]
 
     data = []
     for val in range(0,len(recos),1):
-        img = Image.open(urlopen(recos.iloc[val]['IMAGEURL']))
-        caption = recos.iloc[val].name + ' | ' + recos.iloc[val]['PRODUCT_TITLE'] + ' | Price : ${:.2f}'.format(recos.iloc[val]['PRICE']) + ' | % Discount : ' + str(recos.iloc[val]['INFLUENCER_PRODUCT_DISCOUNT']*100) + '% | Gross Margin : {:.2%}'.format(recos.iloc[val]['PRODUCT_GROSS_MARGIN'])
-        product_id = recos.iloc[val]['SHOP_PRODUCT_ID']
-        data.append((img, caption, product_id))
+        try:
+            img = Image.open(urlopen(recos.iloc[val]['IMAGEURL']))
+            caption = recos.iloc[val].name + ' | ' + recos.iloc[val]['PRODUCT_TITLE'] + ' | Price : ${:.2f}'.format(recos.iloc[val]['PRICE']) + ' | % Discount : ' + str(recos.iloc[val]['INFLUENCER_PRODUCT_DISCOUNT']*100) + '% | Gross Margin : {:.2%}'.format(recos.iloc[val]['PRODUCT_GROSS_MARGIN'])
+            product_id = recos.iloc[val]['SHOP_PRODUCT_ID']
+            description = recos.iloc[val]['DESCRIPTION']
+        except:
+            pass
+        data.append((img, caption, product_id, description))
 
     return [data, recos]
    
@@ -93,19 +97,20 @@ if check_password():
     max_recs = c2.number_input('# Recommendations', 10)
 
     with st.spinner('Wait for it 🕒 ...'):
-        [data, recos] = cacherecos(ob, influ_chk, drop_no)
+        [data, recos] = cacherecos(ob, influ_chk, drop_no, max_recs)
 
     session_vals = {}
 
     idx = 0 
     while idx <= len(data)-1:
-        cols = st.columns(2) 
+        cols = st.columns(3) 
         try:
             cols[0].image(data[idx][0], width=150, caption=data[idx][1])
+            cols[1].markdown(data[idx][3], unsafe_allow_html=True)
         except:
             pass
         try:
-            session_vals[data[idx][2]] = cols[1].radio("Rating # {}".format(idx+1),("NOT OK", "OK", "VERY OK"), index = 1, key= data[idx][2])
+            session_vals[data[idx][2]] = cols[2].radio("Rating {}".format(idx),("NOT OK", "OK", "VERY OK"), index = 1, key= data[idx][2])
         except:
             pass
         idx+=1
