@@ -180,8 +180,77 @@ class Query:
                         AND orders.shop_order_source_name <> 'shopify_draft_order'
                         and not cust.email ilike any('%@getelevar.com%', '%@open.store%','%andrewjcampbell1@gmail.com%','%joncairo@gmail.com%','%@affiliatemanager.com%')
                     GROUP BY cust.email, merch.os_merchant
+                    '''
 
 
+    merchant_customer_affinity_q = '''
+                        with custs as (
+                        select
+                            *,
+                            case when CE_SELECTED_AGE <= 17  and CE_SELECTED_GENDER = 'F' then '13-17_female' 
+                                when CE_SELECTED_AGE <= 17  and CE_SELECTED_GENDER = 'M' then '13-17_male' 
+                                when CE_SELECTED_AGE > 17 and CE_SELECTED_AGE <= 24  and CE_SELECTED_GENDER = 'F' then '18-24_female' 
+                                when CE_SELECTED_AGE > 17 and CE_SELECTED_AGE <= 24  and CE_SELECTED_GENDER = 'M' then '18-24_male' 
+                                when CE_SELECTED_AGE > 24 and CE_SELECTED_AGE <= 34  and CE_SELECTED_GENDER = 'F' then '25-34_female' 
+                                when CE_SELECTED_AGE > 24 and CE_SELECTED_AGE <= 34  and CE_SELECTED_GENDER = 'M' then '25-34_male' 
+                                when CE_SELECTED_AGE > 34 and CE_SELECTED_AGE <= 44  and CE_SELECTED_GENDER = 'F' then '35-44_female' 
+                                when CE_SELECTED_AGE > 34 and CE_SELECTED_AGE <= 44  and CE_SELECTED_GENDER = 'M' then '35-44_male' 
+                                when CE_SELECTED_AGE > 45 and CE_SELECTED_AGE <= 64  and CE_SELECTED_GENDER = 'F' then '45-64_female' 
+                                when CE_SELECTED_AGE > 45 and CE_SELECTED_AGE <= 64  and CE_SELECTED_GENDER = 'M' then '45-64_male' 
+                                when CE_SELECTED_AGE > 64 and CE_SELECTED_GENDER = 'F' then '65-_female' 
+                                when CE_SELECTED_AGE > 64 and CE_SELECTED_GENDER = 'M' then '65-_male' end as gender_age,
+                            case when CC_GROUP_CODE in ('B') then 'African American'
+                            when CC_GROUP_CODE in ('A','C','M','I','F') then 'Asian'
+                            when CC_GROUP_CODE in ('H') then 'Hispanic'
+                            when CC_GROUP_CODE in ('E','J','N','P','S','W') then 'White / Caucasian' end as ethnicity
+                        from fivetran_test_database.archive.customer_db 
+                        )
+                        select
+                        merch.os_merchant,
+                        cust.os_store_id,
+                        count(distinct case when gender_age = '13-17_female' then ord.shop_customer_id else null end) as _13_17_female,
+                        count(distinct case when gender_age = '13-17_male' then ord.shop_customer_id else null end) as _13_17_male,
+                        count(distinct case when gender_age = '18-24_female' then ord.shop_customer_id else null end) as _18_24_female,
+                        count(distinct case when gender_age = '18-24_male' then ord.shop_customer_id else null end) as _18_24_male,
+                        count(distinct case when gender_age = '25-34_female' then ord.shop_customer_id else null end) as _25_34_female,
+                        count(distinct case when gender_age = '25-34_male' then ord.shop_customer_id else null end) as _25_34_male,
+                        count(distinct case when gender_age = '35-44_female' then ord.shop_customer_id else null end) as _35_44_female,
+                        count(distinct case when gender_age = '35-44_male' then ord.shop_customer_id else null end) as _35_44_male,
+                        count(distinct case when gender_age = '45-64_female' then ord.shop_customer_id else null end) as _45_64_female,
+                        count(distinct case when gender_age = '45-64_male' then ord.shop_customer_id else null end) as _45_64_male,
+                        count(distinct case when gender_age = '65-_female' then ord.shop_customer_id else null end) as _65__female,
+                        count(distinct case when gender_age = '65-_male' then ord.shop_customer_id else null end) as _65__male,
+                        _13_17_female+ _13_17_male + _18_24_female + _18_24_male + _25_34_female + _25_34_male + _35_44_female + _35_44_male + _45_64_female + _45_64_male + _65__female + _65__male as all_gender_age,
+                        count(distinct case when ethnicity = 'Asian' then ord.shop_customer_id else null end) as asian,
+                        count(distinct case when ethnicity = 'African American' then ord.shop_customer_id else null end) as african_american,
+                        count(distinct case when ethnicity = 'Hispanic' then ord.shop_customer_id else null end) as hispanic,
+                        count(distinct case when ethnicity = 'White / Caucasian' then ord.shop_customer_id else null end) as white_caucasian,
+                        DIV0(_13_17_female, all_gender_age) as pct_13_17_female,
+                        DIV0(_13_17_male, all_gender_age) as pct_13_17_male,
+                        DIV0(_18_24_female, all_gender_age) as pct_18_24_female,
+                        DIV0(_18_24_male, all_gender_age) as pct_18_24_male,
+                        DIV0(_25_34_female, all_gender_age) as pct_25_34_female,
+                        DIV0(_25_34_male, all_gender_age) as pct_25_34_male,
+                        DIV0(_35_44_female, all_gender_age) as pct_35_44_female,
+                        DIV0(_35_44_male, all_gender_age) as pct_35_44_male,
+                        DIV0(_45_64_female, all_gender_age) as pct_45_64_female,
+                        DIV0(_45_64_male, all_gender_age) as pct_45_64_male,
+                        DIV0(_65__female, all_gender_age) as pct_65__female,
+                        DIV0(_65__male, all_gender_age) as pct_65__male,
+                        DIV0(asian, asian + african_american + hispanic + white_caucasian) as pct_asian,
+                        DIV0(african_american, asian + african_american + hispanic + white_caucasian) as pct_african_american,
+                        DIV0(hispanic, asian + african_american + hispanic + white_caucasian) as pct_hispanic,
+                        DIV0(white_caucasian, asian + african_american + hispanic + white_caucasian) as pct_white_caucasian
+                        from custs cust
+                        left join dbt_analytics.prod.def__os_shopify_customer_pass pass
+                        on cust.os_customer_id = pass.os_customer_id
+                        left join analytics.main.os_all_orders ord
+                        on pass.shop_customer_id = ord.shop_customer_id
+                        and pass.os_store_id = ord.os_store_id
+                        left join analytics.main.os_merchants merch
+                        on cust.os_store_id = merch.os_store_id
+                        group by 1, 2
+  
                     '''
 
     products_q = """

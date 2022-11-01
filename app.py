@@ -44,7 +44,7 @@ def cacher(username):
     ob = DashBoard(username=username, write=False)
     ob.influ_info['engagement_rate'] = ob.influ_info['engagement_rate'].apply(lambda x : '{:.2%}'.format(float(x)))
 
-    ob.influ_followers_engagement = ob.influ_followers_engagement.set_index('INFLUENCER_HANDLE')
+    #ob.influ_followers_engagement = ob.influ_followers_engagement.set_index('INFLUENCER_HANDLE')
     # ob.influ_followers_engagement['% US Followers'] = ob.influ_info['% US Followers'].apply(lambda x : '{:.2%}'.format(float(x)))
     # ob.influ_followers_engagement['engagement_rate_pctile'] = ob.influ_info['engagement_rate_pctile'].apply(lambda x : '{:.2%}'.format(float(x)))
     # ob.influ_followers_engagement['follower_pctile'] = ob.influ_info['follower_pctile'].apply(lambda x : '{:.2%}'.format(float(x)))

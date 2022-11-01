@@ -1,3 +1,4 @@
+from asyncio import TimerHandle
 from snowflake.connector.pandas_tools import write_pandas
 import pandas as pd
 from filereader import FileReader
@@ -12,7 +13,7 @@ import nltk
 class DashBoard:
 
 
-    def __init__(self, username='Nate', model_name = 'V0', write=True):
+    def __init__(self, username='Nate', model_name = 'V1', write=True):
         nltk.download('stopwords')
         self.session_time = pd.Timestamp(np.datetime64('now'))
         self.write = write
@@ -24,23 +25,39 @@ class DashBoard:
         self.cust_orders_df = Query.cross_orders(self.s)
         
         self.prods = self.s.run(Query.products_q)
+        self.customer_affinity = self.s.run(Query.merchant_customer_affinity_q)
+
+        self.customer_ethnicity = self.customer_affinity.set_index('OS_MERCHANT')[['PCT_ASIAN','PCT_AFRICAN_AMERICAN','PCT_HISPANIC','PCT_WHITE_CAUCASIAN']].astype(float).rename(columns={'PCT_ASIAN':'Asian','PCT_AFRICAN_AMERICAN':'African American','PCT_HISPANIC':'Hispanic','PCT_WHITE_CAUCASIAN':'White / Caucasian'})
+        self.customer_gender_age = self.customer_affinity.set_index('OS_MERCHANT')[['PCT_13_17_FEMALE',
+       'PCT_13_17_MALE', 'PCT_18_24_FEMALE', 'PCT_18_24_MALE',
+       'PCT_25_34_FEMALE', 'PCT_25_34_MALE', 'PCT_35_44_FEMALE',
+       'PCT_35_44_MALE', 'PCT_45_64_FEMALE', 'PCT_45_64_MALE',
+       'PCT_65__FEMALE', 'PCT_65__MALE']].astype(float).rename(columns={'PCT_13_17_FEMALE':'13-17_female',
+       'PCT_13_17_MALE':'13-17_male', 'PCT_18_24_FEMALE':'18-24_female', 'PCT_18_24_MALE':'18-24_male',
+       'PCT_25_34_FEMALE':'25-34_female', 'PCT_25_34_MALE':'25-34_male', 'PCT_35_44_FEMALE':'35-44_female',
+       'PCT_35_44_MALE':'35-44_male', 'PCT_45_64_FEMALE':'45-64_female', 'PCT_45_64_MALE':'45-64_male',
+       'PCT_65__FEMALE':'65-_female', 'PCT_65__MALE':'65-_male'})
+
 
         self.audience_interests = create_embedding_matrix(self.f,'audience_interests_inf__audience_followers')
-        self.audience_genders = create_embedding_matrix(self.f,'audience_genders_per_age_inf__audience_followers')
+        self.audience_gender_age = create_embedding_matrix(self.f,'audience_genders_per_age_inf__audience_followers')
         self.audience_ethnicity = create_embedding_matrix(self.f, 'audience_ethnicities_inf__audience_followers')
         self.audience_language = create_embedding_matrix(self.f, 'audience_languages_inf__audience_followers')
+
         eng_per_dollar_tbl = self.final_model_output.pivot_table(index=['INFLUENCER_HANDLE','OS_MERCHANT','CODE'], values=['TOTAL_ENGAGEMENT','OS_INFLUENCER_CAC_PER_POST'], aggfunc='mean').reset_index()
         eng_per_dollar_tbl = eng_per_dollar_tbl.pivot_table(index=['INFLUENCER_HANDLE','OS_MERCHANT'], values=['TOTAL_ENGAGEMENT','OS_INFLUENCER_CAC_PER_POST'], aggfunc='sum')
         eng_per_dollar_tbl['ENG_PER_$'] = eng_per_dollar_tbl['TOTAL_ENGAGEMENT']/eng_per_dollar_tbl['OS_INFLUENCER_CAC_PER_POST']
         self.influencer_brand_use_engagement_per_dollar = normalize_by_parts(eng_per_dollar_tbl.pivot_table(index='INFLUENCER_HANDLE', columns ='OS_MERCHANT', values='ENG_PER_$', aggfunc='mean').fillna(0))
 
         self.brand_interests = transformer(self.influencer_brand_use_engagement_per_dollar, self.audience_interests)
-        self.brand_gender_age = transformer(self.influencer_brand_use_engagement_per_dollar, self.audience_genders)
+        self.brand_gender_age = transformer(self.influencer_brand_use_engagement_per_dollar, self.audience_gender_age)
         self.brand_ethnicity = transformer(self.influencer_brand_use_engagement_per_dollar, self.audience_ethnicity)
         self.brand_language = transformer(self.influencer_brand_use_engagement_per_dollar, self.audience_language)
 
+        self.customer_influencer_ethnicity = transformer(self.audience_ethnicity.T, self.customer_ethnicity.T)
+        self.customer_influencer_gender_age = transformer(self.audience_gender_age.T, self.customer_gender_age.T)
 
-        # clean_orders = cust_orders_df[~(cust_orders_df['EMAIL'].str.contains('@getelevar.com') | cust_orders_df['EMAIL'].str.contains('@open.store') | cust_orders_df['EMAIL'].str.contains('andrewjcampbell1@gmail.com') | cust_orders_df['EMAIL'].str.contains('joncairo@gmail.com') | cust_orders_df['EMAIL'].str.contains('@affiliatemanager.com'))]
+        self.customer_influencer_rank = self.customer_influencer_gender_age + self.customer_influencer_ethnicity
 
         orders_pivot = self.cust_orders_df.pivot(index='EMAIL',columns='OS_MERCHANT',values='NUM_ORDERS').fillna(0)
         self.brand_to_brand = orders_pivot.T @ orders_pivot
@@ -122,6 +139,8 @@ class DashBoard:
         self.influ_followers_engagement['follower_pctile'] = pd.qcut(self.influ_followers_engagement['followers'], 5, labels=[0, 0.25, 0.5, 0.75, 1])
         self.influ_followers_engagement['Discount Policy'] = self.influ_followers_engagement.apply(lambda x : policy_selection(x), axis=1)
 
+        self.influ_followers_engagement = self.influ_followers_engagement.set_index('INFLUENCER_HANDLE')
+
         self.influ_info = self.f.reports['user_profile_info'].drop_duplicates(subset=['username'], keep='last').set_index('username')
         self.influ_info['GENDER_CODE'] = self.influ_info['gender'].apply(lambda x : 'M' if x == 'MALE' else 'F')
 
@@ -156,11 +175,13 @@ class DashBoard:
                 startf = pd.DataFrame()
 
         interest_rank = pd.DataFrame(self.audience_interests.loc[influ_chk]).T.dot(self.all_brand_interests.T)
-        gender_age_rank = pd.DataFrame(self.audience_genders.loc[influ_chk]).T.dot(self.all_brand_gender_age.T)
+        gender_age_rank = pd.DataFrame(self.audience_gender_age.loc[influ_chk]).T.dot(self.all_brand_gender_age.T)
         ethinicity_rank = pd.DataFrame(self.audience_ethnicity.loc[influ_chk]).T.dot(self.all_brand_ethnicities.T)
         language_rank = pd.DataFrame(self.audience_language.loc[influ_chk]).T.dot(self.all_brand_languages.T)
 
-        brand_score = interest_rank + gender_age_rank + ethinicity_rank + language_rank ### CHANGE TO USE DATA AXLE AGE & GENDER ###
+        customer_rank = pd.DataFrame(self.customer_influencer_rank.loc[influ_chk]).T
+
+        brand_score = customer_rank + interest_rank + gender_age_rank + ethinicity_rank + language_rank
         sorted_brands = brand_score.T.sort_values(by=influ_chk, ascending=False)
 
         subset_to_show = list(sorted_brands.index)
@@ -172,7 +193,7 @@ class DashBoard:
             already_shown_prods = []
             drop_number = 1
 
-        influencer_discount_prods = self.prods[self.prods['OS_MERCHANT'].isin(subset_to_show)].sort_values(by=['OS_MERCHANT','GENDER_PREFERENCE','PRICE','PRODUCT_GROSS_MARGIN'], ascending=[True, True, False, False])
+        influencer_discount_prods = self.prods[self.prods['OS_MERCHANT'].isin(subset_to_show)].sort_values(by=['OS_MERCHANT','GENDER_PREFERENCE','PRICE','PRODUCT_GROSS_MARGIN'], ascending=[True, True, False, False]) # score influencer
         influencer_discount_prods = influencer_discount_prods[~influencer_discount_prods['SHOP_PRODUCT_ID'].isin(already_shown_prods)]
         available_set = pd.DataFrame(subset_to_show, columns=['Sort Order']).reset_index().set_index('Sort Order').loc[influencer_discount_prods['OS_MERCHANT'].unique()].sort_values(by='index')
 
