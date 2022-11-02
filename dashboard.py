@@ -160,12 +160,12 @@ class DashBoard:
         if drop_no is not None:
             if drop_no == 1:
                 try:
-                    startf = self.s.run(f"""select SHOP_PRODUCT_ID, DROP_NUMBER from DS_DEV_DATABASE.INFLUENCER.HUMAN_EVALUATION where INFLUENCER_HANDLE = '{influ_chk}' and USERNAME = '{self.username}' and DROP_NUMBER = {drop_no}""")
+                    startf = self.s.run(f"""select SHOP_PRODUCT_ID, DROP_NUMBER from DS_DEV_DATABASE.INFLUENCER.HUMAN_EVALUATION where INFLUENCER_HANDLE = '{influ_chk}' and USERNAME = '{self.username}' and DROP_NUMBER = {drop_no} and model_name = '{self.model_name}'""")
                 except:
                     startf = pd.DataFrame()
             else:
                 try:
-                    startf = self.s.run(f"""select SHOP_PRODUCT_ID, DROP_NUMBER from DS_DEV_DATABASE.INFLUENCER.HUMAN_EVALUATION where INFLUENCER_HANDLE = '{influ_chk}' and USERNAME = '{self.username}' and DROP_NUMBER < {drop_no}""")
+                    startf = self.s.run(f"""select SHOP_PRODUCT_ID, DROP_NUMBER from DS_DEV_DATABASE.INFLUENCER.HUMAN_EVALUATION where INFLUENCER_HANDLE = '{influ_chk}' and USERNAME = '{self.username}' and DROP_NUMBER < {drop_no} and model_name = '{self.model_name}'""")
                 except:
                     startf = pd.DataFrame()
         else:
