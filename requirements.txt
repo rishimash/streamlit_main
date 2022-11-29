@@ -7,3 +7,4 @@ pyarrow==8.0.0
 scipy
 snowflake-connector-python==2.7.12
 streamlit>=1.13.0
+json2html
