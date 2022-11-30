@@ -66,7 +66,7 @@ class Query:
         ), browse as (
         select distinct
         m.creator_id,
-            m.discount_percentage,
+            null as discount_percentage,
             m.assignment,
             d.sort_order,
             d.product_id,
@@ -92,6 +92,10 @@ class Query:
             from drops
             union 
         select * from browse
+    
+        qualify
+
+        row_number() over (partition by product_id, status, sort_order order by discount_percentage asc)=1
         order by status, sort_order asc
         '''
         return s.run(q)

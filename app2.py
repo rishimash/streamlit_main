@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import streamlit as st
 from urllib.request import urlopen
 from PIL import Image
@@ -64,7 +63,7 @@ def cacherecos(_s, influ_chk, release_dict, release_chk, max_recs):
             product_id = drops.iloc[val]['PRODUCT_ID']
             if drops.iloc[val]['STATUS'] == 'drop':
                 try:
-                    description = json2html.convert(json =json.loads(drops.iloc[val]['COLLAB_METADATA']+'}'))
+                    description = json2html.convert(json =json.loads(drops.iloc[val]['COLLAB_METADATA']))
                 except:
                     description = '<b>DROP</b>'
             else:
