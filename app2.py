@@ -58,19 +58,16 @@ def cacherecos(_s, influ_chk, release_dict, release_chk, max_recs):
 
     data = []
     for val in range(0,max_recs,1):
-        try:
-            img = Image.open(urlopen(drops.iloc[val]['IMAGEURL']))
-            caption = drops.iloc[val]['STATUS'] +' | ' + drops.iloc[val]['OS_MERCHANT'] + ' | ' + drops.iloc[val]['PRODUCT_TITLE'] + ' | Price : ${:.2f}'.format(drops.iloc[val]['PRICE']) + ' | % Discount : ' + str(drops.iloc[val]['DISCOUNT_PERCENTAGE']*100) + '% | Gross Margin : {:.2%}'.format(drops.iloc[val]['PRODUCT_GROSS_MARGIN'])
-            product_id = drops.iloc[val]['PRODUCT_ID']
-            if drops.iloc[val]['STATUS'] == 'drop':
-                try:
-                    description = json2html.convert(json =json.loads(drops.iloc[val]['COLLAB_METADATA']))
-                except:
-                    description = '<b>DROP</b>'
-            else:
-                description = '<b>SCROLL</b>'
-        except:
-            pass
+        img = Image.open(urlopen(drops.iloc[val]['IMAGEURL']))
+        caption = drops.iloc[val]['STATUS'] +' | ' + drops.iloc[val]['OS_MERCHANT'] + ' | ' + drops.iloc[val]['PRODUCT_TITLE'] + ' | Price : ${:.2f}'.format(drops.iloc[val]['PRICE']) + ' | % Discount : ' + str(drops.iloc[val]['DISCOUNT_PERCENTAGE']*100) + '% | Gross Margin : {:.2%}'.format(drops.iloc[val]['PRODUCT_GROSS_MARGIN'])
+        product_id = drops.iloc[val]['PRODUCT_ID']
+        if drops.iloc[val]['STATUS'] == 'drop':
+            try:
+                description = json2html.convert(json =json.loads(drops.iloc[val]['COLLAB_METADATA']))
+            except:
+                description = '<b>DROP</b>'
+        else:
+            description = '<b>SCROLL</b>'
         data.append((img, caption, product_id, description))
 
     return [data, drops]

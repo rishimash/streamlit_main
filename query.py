@@ -53,7 +53,7 @@ class Query:
             qa.exclude_gumdrop,
             qa.secondary_product_
             from analytics.dbt_exports.export__agg_creator_product_stats tagged
-            inner join analytics.creator.manual_product_qa qa
+            left join analytics.creator.manual_product_qa qa
             on tagged.shop_product_id = qa.shop_product_id
             where exclude_gumdrop is null and secondary_product_ is null
         )
@@ -81,7 +81,8 @@ class Query:
         and m.product_release_id = d.product_release_id
         left join prod 
         on m.product_id = prod.shop_product_id
-        where handle = 'jemdwood'
+        where m.handle = '{influ}' 
+        and d.product_release_id = '{release}'
     
         )
         -- , browse as (
