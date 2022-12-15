@@ -39,59 +39,80 @@ class Query:
 
     def get_drop(s, influ, release):
         q = f'''
-        with drops as (
+         with prod as (
+            select
+            tagged.*,
+            tagged.min_price as price,
+            case when tagged.product_title ilike '%men%' then 'M' 
+                when tagged.os_merchant ilike any ('%Buy Secure Mat%', '%Wearva%','%STEM%','%SOL Organics%','%Canvas Cultures%','%Collection Lounge%','%Farm%') then 'U'
+                when tagged.product_title ilike any('%women%','%bra%','%legging%','%tutu%') then 'F'
+                when avg_gender_consumer > 0.75 then 'M' 
+                when avg_gender_consumer < 0.25 then 'F'
+                else 'U' end as gender_preference,
+            qa.gender_affinity,
+            qa.exclude_gumdrop,
+            qa.secondary_product_
+            from analytics.dbt_exports.export__agg_creator_product_stats tagged
+            inner join analytics.creator.manual_product_qa qa
+            on tagged.shop_product_id = qa.shop_product_id
+            where exclude_gumdrop is null and secondary_product_ is null
+        )
+         ,drops as (
         select
-        m.creator_id,
+        m.handle as creator_id,
         m.discount_percentage,
         m.assignment,
         m.sort_order,
         m.product_id,
         d.collab_metadata,
-        d.imageurl,
-        product_gross_margin,
-        breakeven_discount_pct,
+        prod.imageurl,
+        prod.product_gross_margin,
+        prod.breakeven_discount_pct,
         max_claimed_count,
-        gender_cleaned,
-        price,
-        product_title,
+        prod.gender_preference as gender_cleaned,
+        prod.min_price as price,
+        prod.product_title,
         os_merchant,
         'drop' as status
 
-        from ds_dev_database.influencer.creator_product_match m
-        left join ds_dev_database.influencer.product_detail d
+        from ds_creator_dev_database.service.creator_product_match m
+        left join ds_creator_dev_database.service.product_detail d
         on m.product_id = d.product_id
         and m.product_release_id = d.product_release_id
-        where creator_id = '{influ}'
-        and m.product_release_id = '{release}'
-        ), browse as (
-        select distinct
-        m.creator_id,
-            null as discount_percentage,
-            m.assignment,
-            d.sort_order,
-            d.product_id,
-            d.collab_metadata,
-            d.imageurl,
-            product_gross_margin,
-            breakeven_discount_pct,
-            max_claimed_count,
-            gender_cleaned,
-            price,
-            product_title,
-            os_merchant,
-            'scroll' as status
-        from ds_dev_database.influencer.product_detail d 
-        left join ds_dev_database.influencer.creator_product_match m
-        on m.product_release_id = d.product_release_id
-            and d.product_id <> m.product_id
-        where creator_id = '{influ}' 
-        and d.product_release_id = '{release}'
+        left join prod 
+        on m.product_id = prod.shop_product_id
+        where handle = 'jemdwood'
+    
         )
+        -- , browse as (
+        -- select distinct
+        -- m.creator_id,
+        --    null as discount_percentage,
+        --    m.assignment,
+        --    d.sort_order,
+        --    d.product_id,
+        --    d.collab_metadata,
+        --    d.imageurl,
+        --    product_gross_margin,
+        --    breakeven_discount_pct,
+        --    max_claimed_count,
+        --   gender_cleaned,
+        --    price,
+        --    product_title,
+        --   os_merchant,
+        --    'scroll' as status
+        -- from ds__database.influencer.product_detail d 
+        -- left join ds_dev_database.influencer.creator_product_match m
+        -- on m.product_release_id = d.product_release_id
+        --     and d.product_id <> m.product_id
+        -- where creator_id = '{influ}' 
+        -- and d.product_release_id = '{release}'
+        -- )
         select 
             *
             from drops
-            union 
-        select * from browse
+        --    union 
+        -- select * from browse
     
         qualify
 

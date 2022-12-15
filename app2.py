@@ -41,9 +41,10 @@ def check_password():
 @st.experimental_singleton()
 def cacher(username):
     ob = SnowLoader()
-    releases = ob.run('''select * from ds_dev_database.influencer.product_release''')
+    releases = ob.run('''select * from ds_creator_dev_database.service.product_release''')
     release_dict = releases.set_index('STARTS_AT')['ID'].to_dict()
-    creators = ob.run('''select * from ds_dev_database.influencer.creator''').set_index('INFLUENCER_HANDLE')
+    creators = ob.run('''select * from dbt_analytics.prod.base__user_profile_info order by _OS_LOADED_AT desc''')
+    creators = creators.drop_duplicates(subset=['INFLUENCER_HANDLE'], keep='last').set_index('INFLUENCER_HANDLE')
     #ob.influ_info['engagement_rate'] = ob.influ_info['engagement_rate'].apply(lambda x : '{:.2%}'.format(float(x)))
 
     influ_select_from_list = list(creators.index)
