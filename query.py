@@ -5,7 +5,7 @@ import streamlit as st
 class SnowLoader:
 
     # Time to live: the maximum number of seconds to keep an entry in the cache
-    TTL = 24 * 60 * 60
+    TTL = 60 * 60
 
     def __init__(self):
         self.conn = self.init_connection()
